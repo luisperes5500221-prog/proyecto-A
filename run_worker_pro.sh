@@ -1,3 +1,3 @@
 #!/bin/bash
 source venv/bin/activate
-python workers/pro/worker_pro.py
+python3 workers/pro/worker_pro.py
