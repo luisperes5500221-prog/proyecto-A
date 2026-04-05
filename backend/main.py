@@ -1,30 +1,49 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
+import redis
+import json
 
+# ---------------- CONFIG ----------------
 app = FastAPI()
 
-# Modelo de tarea
+# conexión a Redis
+r = redis.Redis(host='127.0.0.1', port=6379, decode_responses=True)
+
+# ---------------- MODELOS ----------------
 class Task(BaseModel):
     instruction: str
 
-# Memoria temporal (luego será DB)
-tasks = []
+# ---------------- ENDPOINTS ----------------
 
 @app.get("/")
 def root():
-    return {"status": "Backend funcionando"}
+    return {"status": "Backend con Redis funcionando"}
 
+# Crear tarea → se envía a Redis
 @app.post("/task")
 def create_task(task: Task):
-    task_id = len(tasks)
-    new_task = {
-        "id": task_id,
-        "instruction": task.instruction,
-        "status": "pending"
+    data = {
+        "instruction": task.instruction
     }
-    tasks.append(new_task)
-    return new_task
 
-@app.get("/tasks")
-def get_tasks():
-    return tasks
+    r.rpush("queue", json.dumps(data))
+
+    print("📥 Enviado a Redis:", data)
+
+    return {
+        "status": "ok",
+        "message": "tarea enviada",
+        "data": data
+    }
+
+# Ver tareas pendientes (debug opcional)
+@app.get("/queue")
+def get_queue():
+    tasks = r.lrange("queue", 0, -1)
+    return [json.loads(t) for t in tasks]
+
+# Limpiar cola (debug)
+@app.delete("/queue")
+def clear_queue():
+    r.delete("queue")
+    return {"status": "cola limpiada"}

@@ -2,9 +2,9 @@ import redis
 import json
 import subprocess
 
-r = redis.Redis(host='localhost', port=6379, decode_responses=True)
+r = redis.Redis(host='host.docker.internal', port=6379, decode_responses=True)
 
-print("⚡ Worker avanzado iniciado")
+print("🐳 Docker Worker iniciado")
 
 while True:
     task = r.blpop("queue", timeout=5)
@@ -13,7 +13,7 @@ while True:
         data = json.loads(task[1])
         cmd = data.get("instruction")
 
-        print(f"🔥 Ejecutando: {cmd}")
+        print(f"🔥 Ejecutando comando: {cmd}")
 
         try:
             result = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT)
